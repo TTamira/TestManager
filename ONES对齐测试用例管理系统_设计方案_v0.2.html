@@ -391,6 +391,18 @@
 
   <h3>2.5 需求追溯矩阵</h3>
   <p>行 = 需求（从本地轻量「工作项」表读取，字段：编号 / 标题 / 类型 / 状态），列分组 = 用例 / 最新结果 / 关联缺陷。单元格点击直接跳到用例详情。该页面回答两个问题：<b>哪些需求一条用例都没有</b>、<b>哪些需求只有浅层成功路径用例</b>。</p>
+
+  <h3>2.6 UI 主题（三套独立预设：浅灰 / 浅粉 / 黑）</h3>
+  <p>界面提供三套<b>互相独立</b>的色预设，用户可在设置里一键切换并本地持久化；三套不混合、不叠加，各是一套完整的 token 集合：</p>
+  <table>
+    <thead><tr><th style="width:16%">预设</th><th style="width:28%">页面底色</th><th style="width:28%">强调色（主按钮 / 选中）</th><th>文字对比</th></tr></thead>
+    <tbody>
+      <tr><td><b>浅灰色</b>（默认）</td><td>冷调浅灰 <code>#EFF1F5</code>，卡片 <code>#FFFFFF</code></td><td>沉静蓝灰 <code>#5F7FA6</code>（中性、不抢眼）</td><td>正文 <code>#4C4F69</code>，约 8.8:1 达标</td></tr>
+      <tr><td><b>浅粉色</b></td><td>柔粉底 <code>#F8EAF0</code>，卡片 <code>#FFFFFF</code> / 粉白</td><td>玫瑰粉 <code>#B83B6B</code>（深粉，保证可读）</td><td>正文 <code>#5A2A3E</code>，约 7.5:1 达标</td></tr>
+      <tr><td><b>黑色</b></td><td>近黑 <code>#1E1E1E</code>，卡片 <code>#2A2A2A</code></td><td>亮粉 <code>#F5C2E7</code>（深色面用蓝灰而非纯黑，层次更柔）</td><td>正文 <code>#E6E6E8</code>，约 12:1 达标</td></tr>
+    </tbody>
+  </table>
+  <p>设计约束：① 三套都是"<b>弱对比氛围 + 高对比文字</b>"——区块底色可柔，正文与关键文字必须 ≥ WCAG AA（4.5:1）；② 强调色文字必须加深 / 反白，不得浅底配浅字；③ 实现基于 Ant Design v5 <code>theme</code> token + <code>ConfigProvider</code>，每套预设即一组 token 值，切换零成本、无需重写组件；④ 优先做这三套，自定义主题列为保留项。</p>
 </section>
 
 <!-- ============ 3 ============ -->
@@ -479,6 +491,9 @@
       <tr><td>叶子节点的<b>笔记</b></td><td>用例内容，按三段式「前置条件 / 用例步骤 / 预期结果」解析</td></tr>
     </tbody>
   </table>
+  <div class="callout">
+    <b>优先级范围铁律（2026-09-29 用户确认）：</b>优先级是<b>用例（末端叶子）的属性，骨架不携带优先级</b>——中心主题与所有模块节点（功能地图）都不写优先级，即使出现也直接忽略。优先级 Token（P0–P3）只解析末端叶子的两种写法：① 标题前缀 <code>P0 · 用例名</code>；② 笔记专行 <code>优先级: P0</code>。多源优先级：<code>标题前缀 &gt; 笔记行 &gt; 内建标记(可选) &gt; 未设</code>；叶子未写则导入为"未设"，在表单补。该约定与《内容约定格式》的 <code>优先级: P0</code> 字段完全自洽，人 / AI / 系统三端对齐。
+  </div>
   <div class="callout key">
     <b>两个实测缺口（已在规则中处理）：</b>
     <ul style="margin:6px 0 0">
@@ -1007,6 +1022,8 @@ def notes_plain(topic: dict) -&gt; str:
       <tr><td><b>11</b></td><td>测试计划</td><td>用户自建多个计划 + 从用例库引用导入用例（按模块/优先级筛选）+ 多轮并存；导入=引用非复制。</td></tr>
       <tr><td><b>12</b></td><td>系统内手动编辑</td><td>用例库 / 模块树 / 用例均支持手动增删改（新建 / 重命名 / 拖拽排序 / 删除），XMind 导入只是灌入初始结构的手段之一。</td></tr>
       <tr><td><b>13</b></td><td>步骤 / 预期配对</td><td>每步骤可带内联预期（可选）+ 用例级最终预期（可选）；启发式 + 导入预览纠错闸门兜底。</td></tr>
+      <tr><td><b>14</b></td><td>优先级通用标志</td><td>优先级仅解析末端叶子（用例），模块骨架不携带；叶子上两种写法：标题前缀 <code>P0 ·</code> 或笔记专行 <code>优先级: P0</code>；多源优先级 标题&gt;笔记&gt;内建标记&gt;未设；与《内容约定格式》自洽。</td></tr>
+      <tr><td><b>15</b></td><td>UI 主题</td><td>三套独立预设（不混合）：浅灰色（默认）/ 浅粉色 / 黑色；弱对比氛围 + 高对比文字（≥AA）；基于 AntD theme token 切换并本地持久化；自定义主题列为保留项。</td></tr>
     </tbody>
   </table>
 
@@ -1014,7 +1031,7 @@ def notes_plain(topic: dict) -&gt; str:
     <b>残留假设（基于 ONES 文档与行业惯例，若与实际不符请指出）：</b>
     <ol style="margin:6px 0 0">
       <li>优先级语义采用 P0 冒烟 → P3 低频，与 ONES 文档一致。</li>
-      <li>XMind 优先级图标 <code>priority-1/2/3</code> 分别映射 P0/P1/P2，<code>≥4</code> 映射 P3（与 CODING 约定一致）；笔记可选行 <code>优先级: P0</code> 为补充编码方式。</li>
+      <li>XMind 优先级图标 <code>priority-1/2/3</code> 分别映射 P0/P1/P2，<code>≥4</code> 映射 P3（与 CODING 约定一致）；笔记可选行 <code>优先级: P0</code> 为补充编码方式。<b>优先级仅解析末端叶子（用例），模块骨架节点不携带优先级。</b></li>
       <li>模块树层级上限取 10 级（ONES 系产品普遍在 8–12 级之间）。</li>
       <li>用例 ID 形如 <code>TC-0001</code>，按库内自增。</li>
     </ol>
