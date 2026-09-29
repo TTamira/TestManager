@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONES 对齐测试用例管理系统 · 设计方案 v0.1</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1f2328; --muted:#5b6572;
+    --line:#dfe3e8; --line-soft:#eceff3;
+    --accent:#1f5fd6; --accent-soft:#eaf1fd;
+    --warn:#b45309; --warn-soft:#fff7e6;
+    --ok:#1a7f5a; --ok-soft:#e8f5ef;
+    --danger:#b3261e; --danger-soft:#fdecea;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+    font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:40px 24px 80px}
+  header.doc{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:32px 34px; margin-bottom:28px;
+  }
+  header.doc .eyebrow{font-size:12.5px; letter-spacing:.14em; color:var(--accent); font-weight:700; text-transform:uppercase}
+  header.doc h1{margin:10px 0 6px; font-size:29px; line-height:1.35; letter-spacing:-.3px}
+  header.doc .sub{color:var(--muted); font-size:14.5px; margin:0}
+  .meta{display:flex; flex-wrap:wrap; gap:10px; margin-top:20px}
+  .meta span{
+    background:var(--accent-soft); color:var(--accent); border-radius:999px;
+    padding:4px 13px; font-size:12.5px; font-weight:600;
+  }
+  section{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 32px; margin-bottom:22px;
+  }
+  h2{
+    font-size:20px; margin:0 0 18px; padding-bottom:12px;
+    border-bottom:2px solid var(--accent-soft); letter-spacing:-.2px;
+  }
+  h2 .num{color:var(--accent); margin-right:8px; font-variant-numeric:tabular-nums}
+  h3{font-size:16.5px; margin:26px 0 10px; letter-spacing:-.1px}
+  h3:first-of-type{margin-top:6px}
+  h4{font-size:14.5px; margin:18px 0 8px; color:var(--muted)}
+  p{margin:9px 0}
+  ul,ol{margin:9px 0; padding-left:22px}
+  li{margin:5px 0}
+  code{
+    background:#f2f4f7; border:1px solid var(--line-soft); border-radius:4px;
+    padding:1px 5px; font-family:Consolas,"Cascadia Mono",Menlo,monospace; font-size:13px;
+  }
+  pre{
+    background:#f8f9fb; border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:6px; padding:14px 16px; overflow-x:auto; margin:12px 0;
+  }
+  pre code{background:none; border:none; padding:0; font-size:12.8px; line-height:1.65}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.8px}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top}
+  th{background:#f2f5f9; font-weight:700; font-size:13.2px; color:#333c48}
+  tbody tr:nth-child(even){background:#fafbfc}
+  td code{font-size:12.5px}
+  .callout{
+    border-radius:8px; padding:14px 16px; margin:14px 0; font-size:14px;
+    border:1px solid transparent;
+  }
+  .callout b{font-weight:700}
+  .callout.key{background:var(--accent-soft); border-color:#cfe0fa; color:#163f8f}
+  .callout.warn{background:var(--warn-soft); border-color:#f3ddb0; color:#7a4b0a}
+  .callout.ok{background:var(--ok-soft); border-color:#c7e6d8; color:#136048}
+  .callout.danger{background:var(--danger-soft); border-color:#f6cdc9; color:#8d1d16}
+  figure{margin:20px 0; text-align:center}
+  figure svg{max-width:100%; height:auto}
+  figcaption{font-size:12.8px; color:var(--muted); margin-top:8px}
+  .tag{
+    display:inline-block; font-size:11.5px; font-weight:700; padding:2px 8px;
+    border-radius:4px; margin-right:6px; vertical-align:1px;
+  }
+  .tag.p0{background:#fdecea; color:#b3261e}
+  .tag.p1{background:#fff2e0; color:#b45309}
+  .tag.p2{background:#eaf1fd; color:#1f5fd6}
+  .tag.new{background:#e8f5ef; color:#1a7f5a}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .box{border:1px solid var(--line); border-radius:8px; padding:16px 18px; background:#fbfcfd}
+  .box h4{margin-top:0; color:var(--ink)}
+  footer.doc{color:var(--muted); font-size:13px; text-align:center; padding:10px 0 0}
+  .toc{columns:2; column-gap:28px; font-size:14px}
+  @media(max-width:640px){.toc{columns:1}}
+  .toc a{color:var(--accent); text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--line-soft); margin:22px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <div class="eyebrow">Design Proposal · v0.1</div>
+  <h1>ONES 对齐的测试用例管理系统<br>（网页版 · XMind 导入）</h1>
+  <p class="sub">目标：把「XMind 写用例 → 结构化落库 → 计划执行 → 提缺陷」这条链路做成一套自有网页工具，数据结构与交互对齐 ONES，便于日后迁移或双轨并行。</p>
+  <div class="meta">
+    <span>对齐基线：ONES TestCase</span>
+    <span>输入：.xmind / .opml / .xlsx</span>
+    <span>形态：Web（单机或团队）</span>
+    <span>2026-09-29</span>
+  </div>
+</header>
+
+<section>
+  <h2>目录</h2>
+  <div class="toc">
+    <a href="#s0">0 · 结论摘要</a><br>
+    <a href="#s1">1 · ONES 测试用例管理调研</a><br>
+    <a href="#s2">2 · 产品设计（页面与交互）</a><br>
+    <a href="#s3">3 · XMind 导入引擎设计</a><br>
+    <a href="#s4">4 · 数据模型</a><br>
+    <a href="#s5">5 · 技术选型</a><br>
+    <a href="#s6">6 · 里程碑与交付物</a><br>
+    <a href="#s7">7 · 待确认清单</a>
+  </div>
+</section>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <h2><span class="num">0</span>结论摘要</h2>
+
+  <div class="callout key">
+    <b>一句话结论：</b>技术上可行，最大风险点在 XMind 导入的「节点语义识别」——XMind 本身没有"用例"这个概念，必须靠约定（前缀、图标、备注、层级）反推。方案的核心是把这套约定做成<b>可切换的多套识别模式 + 可视化预览纠错</b>，而不是写死一套解析规则。
+  </div>
+
+  <h3>四条关键判断</h3>
+  <ol>
+    <li><b>对齐 ONES 是"数据模型对齐"，不是"功能全量复刻"。</b> ONES 的用例库 → 模块树 → 用例 → 步骤 这条主干非常清晰，直接照搬即可获得 80% 价值；需求追溯、权限、报告属于加分项，可在后续里程碑补齐。</li>
+    <li><b>必须做"先预览、后落库"。</b> XMind 是自由画布，脏数据是常态（空分组、孤立要点、步骤层级错位）。一次性静默导入会产生大量垃圾用例，且难以回滚。导入向导必须先给出结构化预览和逐节点问题标注。</li>
+    <li><b>建议 Python（FastAPI）技术栈。</b> XMind 解析生态在 Python 侧最成熟，且能直接复用你现有的 Python 环境；前端用 React + Ant Design，其 Tree / Table / Drawer 组件与 ONES 的观感几乎同构。</li>
+    <li><b>导入能力要做成"插件化规则"。</b> ONES 官方公开文档只明确 .opml / .xlsx，.xmind 与自定义字段映射见其产品更新说明；而云效、CODING 各有自己的一套 XMind 约定（<code>tc:</code> 前缀 vs <code>+</code> 分组 + 优先级图标）。规则可配置，才不会绑死在某一家。</li>
+  </ol>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2><span class="num">1</span>ONES 测试用例管理调研</h2>
+  <p>调研来源为 ONES 官方帮助文档（docs.ones.com）与 ONES TestCase 产品页，以下为对齐基线的事实陈述。</p>
+
+  <h3>1.1 层级模型</h3>
+  <figure>
+    <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ONES 测试用例层级模型">
+      <rect x="0" y="0" width="900" height="330" fill="#ffffff"/>
+      <!-- left column: hierarchy -->
+      <rect x="30" y="24" width="330" height="44" rx="7" fill="#eaf1fd" stroke="#1f5fd6"/>
+      <text x="195" y="52" font-family="Segoe UI, Microsoft YaHei" font-size="14" font-weight="700" fill="#163f8f" text-anchor="middle">产品 / 项目</text>
+
+      <path d="M195 68 L195 86" stroke="#1f5fd6" stroke-width="1.5"/>
+
+      <rect x="30" y="86" width="330" height="44" rx="7" fill="#eaf1fd" stroke="#1f5fd6"/>
+      <text x="195" y="114" font-family="Segoe UI, Microsoft YaHei" font-size="14" font-weight="700" fill="#163f8f" text-anchor="middle">测试用例库（可多库 / 公共库）</text>
+
+      <path d="M195 130 L195 148" stroke="#1f5fd6" stroke-width="1.5"/>
+
+      <rect x="30" y="148" width="330" height="44" rx="7" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="195" y="168" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#1f4a9c" text-anchor="middle">功能模块树</text>
+      <text x="195" y="184" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">树状 / 拖拽排序 / 计数含子模块</text>
+
+      <path d="M195 192 L195 210" stroke="#1f5fd6" stroke-width="1.5"/>
+
+      <rect x="30" y="210" width="330" height="44" rx="7" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="195" y="238" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#1f4a9c" text-anchor="middle">测试用例 TestCase</text>
+
+      <path d="M195 254 L195 272" stroke="#1f5fd6" stroke-width="1.5"/>
+
+      <rect x="30" y="272" width="330" height="44" rx="7" fill="#f7f9fc" stroke="#c3cdd9"/>
+      <text x="195" y="292" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#3a4451" text-anchor="middle">步骤 Step → 预期结果 Expected</text>
+      <text x="195" y="308" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">或「文本型用例」：无步骤，整段描述 + 单条预期</text>
+
+      <!-- right: side tracks -->
+      <rect x="420" y="60" width="440" height="66" rx="7" fill="#fbfcfd" stroke="#dfe3e8"/>
+      <text x="440" y="84" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#1f2328">横向资产</text>
+      <text x="440" y="105" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#5b6572">标签 / 附件 / Wiki 页 / 版本历史 / 回收站</text>
+
+      <rect x="420" y="140" width="440" height="66" rx="7" fill="#fbfcfd" stroke="#dfe3e8"/>
+      <text x="440" y="164" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#1f2328">关联关系</text>
+      <text x="440" y="185" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#5b6572">需求 / 任务 / 缺陷（事务关联）+ 关联其他测试计划</text>
+
+      <rect x="420" y="220" width="440" height="82" rx="7" fill="#fbfcfd" stroke="#dfe3e8"/>
+      <text x="440" y="244" font-family="Segoe UI, Microsoft YaHei" font-size="13.5" font-weight="700" fill="#1f2328">测试计划与执行</text>
+      <text x="440" y="265" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#5b6572">计划 → 关联用例 → 分配执行人 → 逐条执行记录</text>
+      <text x="440" y="285" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#5b6572">→ 失败提缺陷（步骤级 / 用例级）→ 需求追溯矩阵</text>
+
+      <path d="M360 232 L420 232" stroke="#c3cdd9" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <path d="M360 172 L420 172" stroke="#c3cdd9" stroke-width="1.5" stroke-dasharray="4 3"/>
+    </svg>
+    <figcaption>图 1 · ONES TestCase 的层级主干与横向资产</figcaption>
+  </figure>
+
+  <h3>1.2 字段体系：两层结构（这是 ONES 设计里最值得抄的一点）</h3>
+  <p>ONES 把"字段"拆成了两层，解耦了「系统有哪些属性」和「某个用例库显示哪些属性」：</p>
+  <table>
+    <thead>
+      <tr><th style="width:26%">概念</th><th>说明</th><th style="width:26%">对齐要点</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>测试用例字段</b><br><code>Field</code></td>
+        <td>原子字段定义（名称 + 类型）。系统字段不可编辑，仅「优先级」「测试用例类型」例外，可改选项。</td>
+        <td>要有 <code>scope = system | custom</code> 标记，系统字段禁止删除/改名。</td>
+      </tr>
+      <tr>
+        <td><b>测试用例字段配置</b><br><code>FieldConfig</code></td>
+        <td>由多个字段组成的集合，决定"使用该配置的用例库显示哪些字段"；可设默认值与必填。不同用例库可用不同配置。</td>
+        <td>库 ↔ 配置 是 1:N；配置被库引用时禁止删除。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>ONES 用例核心属性（列表可排序 / 可筛选）</h4>
+  <table>
+    <thead><tr><th style="width:22%">属性</th><th style="width:18%">取值 / 类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>测试用例 ID</td><td>系统生成</td><td>唯一标识，可搜索</td></tr>
+      <tr><td>测试用例名称</td><td>文本，必填</td><td>可搜索</td></tr>
+      <tr><td>优先级</td><td>P0 / P1 / P2 / P3</td><td>P0 = 核心冒烟用例，失败即版本不可测；P1 最常执行；P2 全面验证；P3 低频（性能/压力/兼容）</td></tr>
+      <tr><td>测试用例类型</td><td>功能测试 / 性能测试 / …</td><td>选项可自定义</td></tr>
+      <tr><td>前置条件</td><td>富文本</td><td>—</td></tr>
+      <tr><td>步骤 / 预期结果</td><td>有序列表</td><td>步骤型用例；文本型用例则用整段描述 + 单条预期</td></tr>
+      <tr><td>维护者</td><td>用户</td><td>可排序</td></tr>
+      <tr><td>标签</td><td>多值</td><td>用于灵活分类与检索</td></tr>
+      <tr><td>执行人 / 测试结果</td><td>用户 / 结果枚举</td><td>出现在测试计划上下文中</td></tr>
+      <tr><td>附件 / 关联事务 / Wiki</td><td>—</td><td>用例详情页内挂载</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.3 测试计划与执行</h3>
+  <ul>
+    <li><b>计划的组成：</b>名称、经办人、测试阶段、关联项目、关联迭代、权限；高级设置里可配「缺陷的事务类型」。</li>
+    <li><b>计划状态：</b>待办 / 进行中 / 已完成。</li>
+    <li><b>执行：</b>进入用例执行界面，按前置条件、步骤、预期结果判定通过与否，记录「测试结果 + 说明 + 附件」；支持批量「更改结果」。</li>
+    <li><b>提缺陷：</b>失败用例可对<b>某个步骤</b>或<b>整个用例</b>创建缺陷 / 关联已有缺陷，缺陷自动落到计划关联的项目与迭代。</li>
+    <li><b>需求追溯矩阵：</b>第一列默认"需求"（可配为其他事务类型），按计划关联的需求展开；用于查覆盖率与"需求 → 用例 → 结果 → 缺陷"的链路。</li>
+    <li><b>字段配置：</b>可强制"设置测试结果时必须填说明 / 附件"。</li>
+  </ul>
+
+  <h3>1.4 其他与对齐相关的机制</h3>
+  <table>
+    <thead><tr><th style="width:24%">机制</th><th>行为（需在设计中复刻）</th></tr></thead>
+    <tbody>
+      <tr><td>用例库类型</td><td>按产品/项目建库；跨产品用例（兼容性、安全）放公共库以便复用</td></tr>
+      <tr><td>删除模块</td><td><b>不删除</b>模块下的用例；用例上浮到上级模块或变为无模块</td></tr>
+      <tr><td>回收站</td><td>删除进回收站，可恢复到「原模块 + 原测试计划 + 原事务关联」</td></tr>
+      <tr><td>移动 / 复制</td><td>用例可跨用例库移动、复制，支持批量</td></tr>
+      <tr><td>视图</td><td>平铺视图 / 树状视图切换；可开关"显示子模块用例"</td></tr>
+      <tr><td>权限</td><td>TestCase 管理员 → 库权限 → 计划权限 → 报告权限；创建时可指定可查看/可编辑用户</td></tr>
+      <tr><td>导入</td><td>Excel(.xlsx)、思维导图(.opml)；产品更新说明确认支持 .xmind 及自定义导入字段</td></tr>
+      <tr><td>导出</td><td>全部 / 仅选中，导出用例<b>全字段</b></td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.5 对齐边界：明确"抄什么"和"不抄什么"</h3>
+  <div class="grid2">
+    <div class="box">
+      <h4>✅ 对齐（MVP 必做）</h4>
+      <ul style="margin-bottom:0">
+        <li>用例库 / 模块树（拖拽、计数、删除不删用例）</li>
+        <li>字段定义 + 字段配置两层体系</li>
+        <li>用例属性命名与 ID 规则</li>
+        <li>优先级 P0–P3 语义</li>
+        <li>文本型 / 步骤型 两种用例形态</li>
+        <li>回收站与恢复</li>
+        <li>平铺 / 树状视图、显示子模块开关</li>
+        <li>导入 xlsx / xmind / opml，导出全字段</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>⏸ 暂不对齐（后置，避免过度设计）</h4>
+      <ul style="margin-bottom:0">
+        <li>多租户、SSO、组织级权限矩阵</li>
+        <li>与需求/迭代/缺陷系统的双向实时同步</li>
+        <li>Wiki 页面关联</li>
+        <li>CI/CD 与自动化测试集成</li>
+        <li>自定义测试报告模板引擎</li>
+        <li>用例评审流（ONES 有相关能力，MVP 先用"版本历史 + 状态标记"替代）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2><span class="num">2</span>产品设计（页面与交互）</h2>
+
+  <h3>2.1 信息架构</h3>
+  <figure>
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="信息架构">
+      <rect x="0" y="0" width="900" height="300" fill="#ffffff"/>
+      <rect x="20" y="20" width="180" height="260" rx="8" fill="#f2f5f9" stroke="#c3cdd9"/>
+      <text x="110" y="46" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#3a4451" text-anchor="middle">全局导航</text>
+      <rect x="34" y="60" width="152" height="30" rx="5" fill="#eaf1fd" stroke="#7aa7ea"/>
+      <text x="110" y="80" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#1f4a9c" text-anchor="middle">用例库</text>
+      <rect x="34" y="98" width="152" height="30" rx="5" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="110" y="118" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#3a4451" text-anchor="middle">测试计划</text>
+      <rect x="34" y="136" width="152" height="30" rx="5" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="110" y="156" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#3a4451" text-anchor="middle">需求追溯</text>
+      <rect x="34" y="174" width="152" height="30" rx="5" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="110" y="194" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#3a4451" text-anchor="middle">测试报告</text>
+      <rect x="34" y="212" width="152" height="30" rx="5" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="110" y="232" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#3a4451" text-anchor="middle">回收站</text>
+      <rect x="34" y="250" width="152" height="30" rx="5" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="110" y="270" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#3a4451" text-anchor="middle">系统设置</text>
+
+      <rect x="230" y="20" width="250" height="260" rx="8" fill="#ffffff" stroke="#1f5fd6"/>
+      <text x="355" y="46" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#163f8f" text-anchor="middle">用例库视图</text>
+      <rect x="246" y="60" width="218" height="90" rx="5" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="355" y="84" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#1f4a9c" text-anchor="middle">左：模块树</text>
+      <text x="355" y="104" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">增删改 / 拖拽 / 计数 / 搜索</text>
+      <text x="355" y="130" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">★ 全局搜索 / Ctrl+K 跳转</text>
+      <rect x="246" y="162" width="218" height="102" rx="5" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="355" y="186" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#1f4a9c" text-anchor="middle">右：用例列表</text>
+      <text x="355" y="206" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">工具栏 / 列设置 / 排序 / 复杂筛选</text>
+      <text x="355" y="226" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">平铺 ⇄ 树状 / 显示子模块开关</text>
+      <text x="355" y="250" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">批量：移动 / 复制 / 删除 / 关联计划</text>
+
+      <rect x="510" y="20" width="370" height="120" rx="8" fill="#fbfcfd" stroke="#dfe3e8"/>
+      <text x="695" y="46" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f2328" text-anchor="middle">用例详情（抽屉 / 全屏）</text>
+      <text x="695" y="70" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">字段区（含自定义字段）· 步骤表格</text>
+      <text x="695" y="90" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">关联（需求 / 缺陷）· 附件 · 版本历史</text>
+      <text x="695" y="118" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#1a7f5a" text-anchor="middle">对齐 ONES：字段可配必填，保存即生成版本快照</text>
+
+      <rect x="510" y="160" width="370" height="120" rx="8" fill="#fbfcfd" stroke="#dfe3e8"/>
+      <text x="695" y="186" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f2328" text-anchor="middle">导入向导（独立全屏流程）</text>
+      <text x="695" y="210" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">选文件 → 选画布 → 选识别模式</text>
+      <text x="695" y="230" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">→ 结构预览 + 问题标注 → 字段映射</text>
+      <text x="695" y="250" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">→ 目标库/模块 + 冲突策略 → 导入报告</text>
+      <path d="M480 160 L510 200" stroke="#c3cdd9" stroke-width="1.5" stroke-dasharray="4 3"/>
+    </svg>
+    <figcaption>图 2 · 信息架构与主页面布局</figcaption>
+  </figure>
+
+  <h3>2.2 用例库主界面（三栏 + 双层工具栏）</h3>
+  <ul>
+    <li><b>左栏（模块树，280px 可拖宽）</b>：模块树 + 每节点显示「所含用例总数（含子模块）」；右键菜单：创建子模块 / 重命名 / 删除 / 复制模块路径；顶部有"定位到当前模块"与筛选框。</li>
+    <li><b>右栏（用例列表）</b>：默认列 = 复选框、用例 ID、名称、维护者、优先级、类型、执行人、测试结果、操作。</li>
+    <li><b>工具栏第一行</b>：<code>+ 创建用例</code>、<code>导入用例</code>（xlsx / xmind / opml）、<code>导出用例</code>、<code>筛选器</code>、<code>列设置</code>。</li>
+    <li><b>工具栏第二行</b>：视图切换（平铺 / 树状）、显示子模块用例开关、批量操作条（移动 / 复制 / 删除 / 关联计划 / 修改字段）。</li>
+    <li><b>交互一致性</b>：点行展开详情抽屉，URL 同步 <code>?case=TC-0012</code>，方便直接分享/收藏某条用例。</li>
+  </ul>
+
+  <h3>2.3 测试计划与执行</h3>
+  <p>分三屏：计划列表 → 计划详情（用例 + 执行人 + 结果）→ 执行界面。</p>
+  <ul>
+    <li><b>计划列表</b>：按状态（待办 / 进行中 / 已完成）分组，支持按关联项目、关联迭代分组；每张卡片显示进度条（已执行/总数、通过率）。注："待确认"计入"已执行"但不计入通过/不通过分母，单列统计。</li>
+    <li><b>计划详情</b>：用例列表可排序（ID / 名称 / 维护者 / 优先级 / 类型 / 执行人 / 结果）、可复杂筛选、可隐藏子模块用例；支持批量改执行人、批量改结果。</li>
+    <li><b>执行界面</b>：逐步骤打勾（步骤级结果），整例给结论：<b>通过 / 不通过 / 阻塞 / 待确认</b>（执行情况字段，四态为用户指定；另有系统内建的"未执行"初始态，不可手动选中）；备注与附件可选必填（跟随计划的字段配置）；失败时按钮：<code>创建缺陷</code> / <code>关联已有缺陷</code>，可选挂在某一步骤或整个用例。"不通过"与"阻塞"均可提缺陷；"待确认"不提缺陷，用于结果存疑（如环境问题、需求未明确的 Demo-only 项）暂缓判定。</li>
+    <li><b>键盘流</b>：<code>J/K</code> 切上下条，<code>P/F/B/S</code> 直接标记结果，执行大型回归时效率提升明显。</li>
+  </ul>
+  <div class="callout warn">
+    <b>设计决策（增强，非 ONES 行为）：</b>测试计划引用用例时记录<b>用例版本号</b>（快照）。这样用例库后续被修改，不会污染历史执行结果的判定依据。ONES 未明确这一点，我们按更严谨的方式做，并在 UI 上标注"该用例在计划创建后已被修改"。
+  </div>
+
+  <h3>2.4 需求追溯矩阵</h3>
+  <p>行 = 需求（从本地轻量「工作项」表读取，字段：编号 / 标题 / 类型 / 状态），列分组 = 用例 / 最新结果 / 关联缺陷。单元格点击直接跳到用例详情。该页面回答两个问题：<b>哪些需求一条用例都没有</b>、<b>哪些需求只有浅层成功路径用例</b>。</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2><span class="num">3</span>XMind 导入引擎设计（核心模块）</h2>
+
+  <h3>3.1 先搞清楚 .xmind 到底是什么</h3>
+  <p><code>.xmind</code> 本质是一个 ZIP 包。把后缀改成 <code>.zip</code> 就能解开。内部结构<b>随版本不同而不同</b>，这是实现时的第一个坑：</p>
+  <table>
+    <thead><tr><th style="width:30%">版本</th><th style="width:34%">关键文件</th><th>陷阱</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>XMIND 8 及更早（legacy）</td>
+        <td><code>content.xml</code></td>
+        <td>数据在 XML 里，用 <code>xml.etree</code> 或 <code>lxml</code> 解析</td>
+      </tr>
+      <tr>
+        <td>XMind 2020+ / Zen / 2026</td>
+        <td><code>content.json</code>（真数据）<br>+ <code>content.xml</code>（占位）</td>
+        <td><b>content.xml 里只有一句警告文本，不是数据</b>。只读 content.xml 的解析器会"成功返回空导图"——这是最隐蔽的失败模式，必须显式检测。</td>
+      </tr>
+      <tr>
+        <td>通用附加物</td>
+        <td><code>resources/</code>、<code>metadata.json</code>、<code>manifest.json</code></td>
+        <td>图片、贴纸、附件都在 resources 下；<code>content.json</code> 是<b>画布（sheet）数组</b>，多画布必须显式处理</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <b>必须实现的兼容策略：</b>优先读 <code>content.json</code>，不存在再回退 <code>content.xml</code>；并对"content.xml 仅含警告 / 无 rootTopic"的情况抛出明确错误，绝不静默产出 0 条用例。
+  </div>
+
+  <h3>3.2 节点语义：XMind 没有"用例"概念</h3>
+  <p>这是整个方案最需要设计的地方。<code>.xmind</code> 里只有一棵主题树，没有"用例 / 模块 / 步骤"的类型信息，只能靠<b>约定</b>反推。业界已形成两套主流约定，我们的做法是<b>两套都支持 + 一套纯层级兜底</b>：</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:16%">模式</th><th style="width:30%">识别依据</th><th>映射规则</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>M1 · 前缀声明</b><br><span class="tag p2">云效风格</span></td>
+        <td>节点标题前缀</td>
+        <td>
+          <code>pc: xxx</code> → 前置条件（必须是用例子节点）<br>
+          <code>tc: 标题</code> → 测试用例<br>
+          <code>tc-P1: 标题</code> → 用例，等级 P1<br>
+          <code>tc-P2-性能测试: 标题</code> → 等级 P2 + 类型"性能测试"<br>
+          其余节点 → 分组（模块）<br>
+          用例的子节点 → 步骤；步骤的子节点 → 预期结果
+        </td>
+      </tr>
+      <tr>
+        <td><b>M2 · 标记驱动</b><br><span class="tag p2">CODING 风格</span></td>
+        <td>XMind 原生优先级图标 + 备注 + <code>+</code> 前缀</td>
+        <td>
+          <code>+</code> 开头的节点 → 分组；<br>
+          分组下第一个非 <code>+</code> 节点 → 用例标题（后续同级节点为下一条用例）<br>
+          标题上的优先级图标：<code>priority-1</code>→P0，<code>2</code>→P1，<code>3</code>→P2，<code>≥4</code>→P3<br>
+          标题节点的<b>备注（notes）</b> → 前置条件<br>
+          无子节点 → 文本型用例；有子节点 → 步骤型（步骤的子节点 = 预期结果，多个则合并）
+        </td>
+      </tr>
+      <tr>
+        <td><b>M3 · 层级推导</b><br><span class="tag ok">兜底</span></td>
+        <td>纯结构，零标记</td>
+        <td>
+          根节点 = 画布标题（丢弃）<br>
+          中间层 → 模块路径<br>
+          叶节点 → 用例；提供参数「倒数第 N 层为用例」应对"分组下还有子分组"的情况<br>
+          默认优先级 = 配置的默认值（如 P2）
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <b>为什么必须做成可切换：</b>ONES 官方公开文档明确的用例库导入只有 <code>.xlsx</code> / <code>.opml</code>，<code>.xmind</code> 与"自定义导入字段"出现在其产品更新说明里，但公开文档未给出完整的节点约定规范。与其赌一套，不如做成规则可插拔——后续拿到真实 ONES 模板样例，只需新增一个规则实现，不动核心链路。
+  </div>
+
+  <h3>3.3 映射示意</h3>
+  <figure>
+    <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="XMind 到系统的结构映射">
+      <rect x="0" y="0" width="900" height="400" fill="#ffffff"/>
+      <!-- left: xmind -->
+      <text x="30" y="26" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f2328">XMind 画布（M1 前缀模式）</text>
+      <rect x="30" y="38" width="380" height="340" rx="8" fill="#fbfcfd" stroke="#dfe3e8"/>
+
+      <rect x="52" y="56" width="336" height="30" rx="6" fill="#eef2f7" stroke="#c3cdd9"/>
+      <text x="68" y="76" font-family="Consolas, monospace" font-size="12" fill="#5b6572">探探 V2.0 测试用例</text>
+      <text x="372" y="76" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#b3261e" text-anchor="end">根节点丢弃</text>
+
+      <rect x="76" y="98" width="312" height="30" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="92" y="118" font-family="Consolas, monospace" font-size="12" fill="#3a4451">登录模块</text>
+      <text x="372" y="118" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#1f5fd6" text-anchor="end">→ 模块</text>
+
+      <rect x="100" y="140" width="288" height="30" rx="6" fill="#fff7e6" stroke="#f3ddb0"/>
+      <text x="116" y="160" font-family="Consolas, monospace" font-size="12" fill="#7a4b0a">tc-P0: 手机号+验证码登录成功</text>
+      <text x="372" y="160" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#b45309" text-anchor="end">→ 用例 P0</text>
+
+      <rect x="124" y="182" width="264" height="28" rx="6" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="140" y="201" font-family="Consolas, monospace" font-size="11.5" fill="#1f4a9c">pc: 已注册账号，网络正常</text>
+      <text x="372" y="201" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#1f5fd6" text-anchor="end">→ 前置条件</text>
+
+      <rect x="124" y="218" width="264" height="28" rx="6" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="140" y="237" font-family="Consolas, monospace" font-size="11.5" fill="#1f4a9c">输入手机号并点击获取验证码</text>
+      <text x="372" y="237" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#1f5fd6" text-anchor="end">→ 步骤 1</text>
+
+      <rect x="148" y="254" width="240" height="28" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="164" y="273" font-family="Consolas, monospace" font-size="11.5" fill="#3a4451">60 秒倒计时开始，短信到达</text>
+      <text x="372" y="273" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="end">→ 预期结果</text>
+
+      <rect x="124" y="290" width="264" height="28" rx="6" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="140" y="309" font-family="Consolas, monospace" font-size="11.5" fill="#1f4a9c">输入验证码并提交</text>
+      <text x="372" y="309" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#1f5fd6" text-anchor="end">→ 步骤 2</text>
+
+      <rect x="148" y="326" width="240" height="28" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="164" y="345" font-family="Consolas, monospace" font-size="11.5" fill="#3a4451">跳转首页，展示用户头像</text>
+      <text x="372" y="345" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="end">→ 预期结果</text>
+
+      <!-- arrow -->
+      <path d="M424 208 L476 208" stroke="#1f5fd6" stroke-width="2"/>
+      <path d="M476 208 l-9 -5 l0 10 z" fill="#1f5fd6"/>
+      <text x="450" y="196" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#1f5fd6" text-anchor="middle">解析</text>
+
+      <!-- right: result -->
+      <text x="500" y="26" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f2328">系统落库结果</text>
+      <rect x="500" y="38" width="370" height="340" rx="8" fill="#ffffff" stroke="#1f5fd6"/>
+
+      <rect x="520" y="60" width="330" height="42" rx="6" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="536" y="79" font-family="Segoe UI, Microsoft YaHei" font-size="12.5" fill="#1f4a9c">模块树 / 登录模块</text>
+      <text x="536" y="95" font-family="Consolas, monospace" font-size="11" fill="#5b6572">module.path = 登录模块</text>
+
+      <rect x="520" y="114" width="330" height="42" rx="6" fill="#fff7e6" stroke="#f3ddb0"/>
+      <text x="536" y="133" font-family="Consolas, monospace" font-size="12" fill="#7a4b0a">TC-0001 手机号+验证码登录成功</text>
+      <text x="536" y="149" font-family="Consolas, monospace" font-size="11" fill="#5b6572">priority=P0  type=功能测试  maintainer=—</text>
+
+      <rect x="520" y="168" width="330" height="58" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="536" y="187" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#3a4451">precondition（文本）</text>
+      <text x="536" y="204" font-family="Consolas, monospace" font-size="11" fill="#5b6572">已注册账号，网络正常</text>
+      <text x="536" y="219" font-family="Consolas, monospace" font-size="11" fill="#5b6572">source_node_path = 画布/登录模块/tc-P0…</text>
+
+      <rect x="520" y="238" width="330" height="112" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="536" y="258" font-family="Segoe UI, Microsoft YaHei" font-size="12" font-weight="700" fill="#3a4451">case_step（有序）</text>
+      <text x="536" y="278" font-family="Consolas, monospace" font-size="11" fill="#5b6572">1 | 输入手机号并点击获取验证码</text>
+      <text x="548" y="293" font-family="Consolas, monospace" font-size="11" fill="#5b6572">↳ 60 秒倒计时开始，短信到达</text>
+      <text x="536" y="313" font-family="Consolas, monospace" font-size="11" fill="#5b6572">2 | 输入验证码并提交</text>
+      <text x="548" y="328" font-family="Consolas, monospace" font-size="11" fill="#5b6572">↳ 跳转首页，展示用户头像</text>
+      <text x="536" y="344" font-family="Segoe UI, Microsoft YaHei" font-size="10.5" fill="#1a7f5a">source_node_id 保留，供反查与重复导入去重</text>
+    </svg>
+    <figcaption>图 3 · XMind 主题树 → 模块/用例/步骤 的映射</figcaption>
+  </figure>
+
+  <h3>3.4 解析实现要点（需要真正写对的地方）</h3>
+  <table>
+    <thead><tr><th style="width:22%">数据</th><th style="width:39%">新版 content.json</th><th>老版 content.xml</th></tr></thead>
+    <tbody>
+      <tr><td>画布</td><td>顶层是数组，元素含 <code>title</code>、<code>rootTopic</code>、<code>detachedTopics</code></td><td><code>sheet</code> 节点，属性 <code>id</code> / <code>title</code></td></tr>
+      <tr><td>子节点</td><td><code>topic.children.attached[]</code>；浮动主题在 <code>detached[]</code>（易漏）</td><td><code>topic/children/topics[@type="attached"]/topic</code></td></tr>
+      <tr><td>优先级</td><td><code>topic.markers[].markerId</code>，形如 <code>priority-1</code></td><td><code>topic/marker-refs/marker-ref[@marker-id]</code></td></tr>
+      <tr><td>备注→前置条件</td><td><code>topic.notes.plain.content</code>（<code>notes.html</code> 是 XHTML 片段，需剥标签）</td><td><code>topic/notes/plain</code></td></tr>
+      <tr><td>标签</td><td><code>topic.labels[]</code></td><td><code>topic/labels/label</code></td></tr>
+      <tr><td>超链接/附件</td><td><code>topic.href</code>；附件在 <code>resources/</code> 内，需按 rel 解析</td><td>同左，路径解析方式不同</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code>import json, zipfile
+import xml.etree.ElementTree as ET
+
+def read_xmind(path) -&gt; tuple[list[dict], str]:
+    """跨版本读取 XMind，返回 (画布列表, 格式标记)。"""
+    with zipfile.ZipFile(path) as z:
+        names = set(z.namelist())
+
+        # 1) 新版优先：content.json
+        if "content.json" in names:
+            sheets = json.loads(z.read("content.json").decode("utf-8"))
+            if not isinstance(sheets, list) or not sheets:
+                raise ValueError("content.json 解析结果为空，文件可能损坏")
+            out = []
+            for s in sheets:
+                out.append({
+                    "title": s.get("title", ""),
+                    "root":  s.get("rootTopic") or {},
+                    # 浮动主题必须一并处理，否则用例会"莫名少几条"
+                    "detached": s.get("detachedTopics") or [],
+                })
+            return out, "json"
+
+        # 2) 回退老版：content.xml
+        if "content.xml" in names:
+            root = ET.fromstring(z.read("content.xml"))
+            sheets = []
+            for sheet in root.iter("sheet"):
+                topic = sheet.find("topic")
+                if topic is None:
+                    continue
+                sheets.append({
+                    "title": sheet.get("title", ""),
+                    "root":  _xml_topic_to_dict(topic),
+                    "detached": [],
+                })
+            if not sheets:
+                raise ValueError("content.xml 中未找到有效画布（可能是新版文件的占位文件）")
+            return sheets, "xml"
+
+    raise ValueError("不是有效的 .xmind 文件：缺少 content.json / content.xml")
+
+
+def markers_of(topic: dict) -&gt; list[str]:
+    """新版优先级/图标：topic.markers = [{"markerId": "priority-1"}, ...]"""
+    return [m.get("markerId", "") for m in (topic.get("markers") or [])]
+
+
+PRIORITY_MAP = {"priority-1": "P0", "priority-2": "P1", "priority-3": "P2"}
+# 与 ONES / CODING 的约定一致：图标 1/2/3 对应 P0/P1/P2，≥4 或缺失 → P3（或取默认值）
+
+def priority_of(topic: dict, default: str = "P3") -&gt; str:
+    for mk in markers_of(topic):
+        if mk in PRIORITY_MAP:
+            return PRIORITY_MAP[mk]
+        if mk.startswith("priority-"):
+            return "P3"          # priority-4 ~ 9 一律 P3
+    return default
+
+
+def attached_children(topic: dict) -&gt; list[dict]:
+    return ((topic.get("children") or {}).get("attached") or [])
+
+
+def notes_plain(topic: dict) -&gt; str:
+    """优先取 notes.plain；只有 html 时剥标签后作为兜底。"""
+    notes = topic.get("notes") or {}
+    plain = (notes.get("plain") or {}).get("content")
+    if plain:
+        return plain.strip()
+    html = (notes.get("html") or {}).get("content") or ""
+    return re.sub(r"&lt;[^&gt;]+&gt;", "", html).strip()
+</code></pre>
+
+  <div class="callout warn">
+    <b>工程注意（踩坑清单）：</b>
+    <ol style="margin:6px 0 0">
+      <li>只读 <code>content.xml</code> 的库在新版文件上会返回"空导图"而非报错 → 必须显式探测。</li>
+      <li>浮动主题（<code>detachedTopics</code>）不处理会丢用例。</li>
+      <li>多画布：必须在向导里让用户<b>选择画布</b>（或勾选合并），不能默认取第一个。</li>
+      <li>备注里的 <code>notes.html</code> 是 XHTML 片段，含命名空间，直接当纯文本用会带标签。</li>
+      <li>节点标题可能含零宽字符/全角空格，会导致"看起来同名"的用例去重失败 → 入库前统一 normalize。</li>
+    </ol>
+  </div>
+
+  <h3>3.5 导入向导（4 步，先预览后落库）</h3>
+  <figure>
+    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="导入向导流程">
+      <rect x="0" y="0" width="900" height="220" fill="#ffffff"/>
+      <!-- step boxes -->
+      <rect x="20" y="60" width="190" height="104" rx="8" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="115" y="86" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f4a9c" text-anchor="middle">① 上传与解析</text>
+      <text x="115" y="108" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">选文件 · 自动识别版本</text>
+      <text x="115" y="126" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">多画布 → 选择画布</text>
+      <text x="115" y="144" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">解析失败给明确原因</text>
+
+      <path d="M212 112 L238 112" stroke="#1f5fd6" stroke-width="2"/>
+      <path d="M238 112 l-8 -5 l0 10 z" fill="#1f5fd6"/>
+
+      <rect x="240" y="60" width="200" height="104" rx="8" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="340" y="86" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f4a9c" text-anchor="middle">② 结构预览纠错</text>
+      <text x="340" y="108" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">左：原始树 / 右：识别结果</text>
+      <text x="340" y="126" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">切换 M1/M2/M3 识别模式</text>
+      <text x="340" y="144" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">问题节点红/黄标注 + 就地改</text>
+
+      <path d="M442 112 L468 112" stroke="#1f5fd6" stroke-width="2"/>
+      <path d="M468 112 l-8 -5 l0 10 z" fill="#1f5fd6"/>
+
+      <rect x="470" y="60" width="200" height="104" rx="8" fill="#f2f7ff" stroke="#7aa7ea"/>
+      <text x="570" y="86" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#1f4a9c" text-anchor="middle">③ 映射与目标</text>
+      <text x="570" y="108" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">自定义字段映射</text>
+      <text x="570" y="126" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">目标库 / 目标模块</text>
+      <text x="570" y="144" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">冲突策略 4 选 1</text>
+
+      <path d="M672 112 L698 112" stroke="#1f5fd6" stroke-width="2"/>
+      <path d="M698 112 l-8 -5 l0 10 z" fill="#1f5fd6"/>
+
+      <rect x="700" y="60" width="180" height="104" rx="8" fill="#e8f5ef" stroke="#c7e6d8"/>
+      <text x="790" y="86" font-family="Segoe UI, Microsoft YaHei" font-size="13" font-weight="700" fill="#136048" text-anchor="middle">④ 执行与报告</text>
+      <text x="790" y="108" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">分批写入 + 批次 ID</text>
+      <text x="790" y="126" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">成功/跳过/告警 计数</text>
+      <text x="790" y="144" font-family="Segoe UI, Microsoft YaHei" font-size="11.5" fill="#5b6572" text-anchor="middle">一键回滚整批</text>
+
+      <rect x="20" y="26" width="860" height="22" rx="6" fill="#f7f9fc" stroke="#dfe3e8"/>
+      <text x="450" y="42" font-family="Segoe UI, Microsoft YaHei" font-size="12" fill="#5b6572" text-anchor="middle">全程可回退；步骤 ② 是防止脏数据入库的关键闸门——不允许跳过</text>
+    </svg>
+    <figcaption>图 4 · 导入向导四步流程</figcaption>
+  </figure>
+
+  <h4>冲突策略（第 ③ 步，用户显式选择）</h4>
+  <table>
+    <thead><tr><th style="width:22%">策略</th><th>行为</th><th style="width:26%">适用场景</th></tr></thead>
+    <tbody>
+      <tr><td><b>全部新建</b></td><td>不比对，全部插入新用例</td><td>首次导入</td></tr>
+      <tr><td><b>跳过已存在</b><span class="tag ok">默认</span></td><td>按指纹（模块路径 + 归一化标题）判重，已存在的跳过并记入报告</td><td>重复导入同一文件（对齐 ONES 的"同名不覆盖"行为）</td></tr>
+      <tr><td><b>更新已存在</b></td><td>覆盖已存在用例的字段与步骤，并生成新版本快照</td><td>XMind 修完后重新同步</td></tr>
+      <tr><td><b>仅追加步骤</b></td><td>保留原用例字段，把新步骤追加到步骤末尾</td><td>补充测试步骤</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.6 校验规则（V = 拦截级，W = 告警级）</h3>
+  <table>
+    <thead><tr><th style="width:10%">级别</th><th style="width:30%">规则</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag p0">V</span></td><td>空分组（分组下无任何用例）</td><td>拒绝落库，提示删除该分组或补用例</td></tr>
+      <tr><td><span class="tag p0">V</span></td><td>用例标题为空 / 仅空白字符</td><td>拒绝，标注节点路径</td></tr>
+      <tr><td><span class="tag p0">V</span></td><td>步骤层级错位（步骤下出现了"步骤的兄弟"而非预期结果）</td><td>拒绝并提示预期结构</td></tr>
+      <tr><td><span class="tag p1">W</span></td><td>步骤数 &gt; 20</td><td>截断到 20，报告标注被忽略的节点</td></tr>
+      <tr><td><span class="tag p1">W</span></td><td>预期结果合并后 &gt; 200 字符</td><td>截断并告警</td></tr>
+      <tr><td><span class="tag p1">W</span></td><td>模块层级 &gt; 10 级</td><td>告警；超出部分压缩为一级或提示扁平化</td></tr>
+      <tr><td><span class="tag p1">W</span></td><td>层级过深但全无 <code>tc:</code> 标记（疑似用 M1 模式解析 M3 文件）</td><td>告警并推荐切换识别模式——这是最常见的"识别模式选错"信号</td></tr>
+      <tr><td><span class="tag p2">W</span></td><td>单次导入 &gt; 500 条用例</td><td>提示分批，或走后台任务队列</td></tr>
+      <tr><td><span class="tag p2">W</span></td><td>同名用例重复（同一模块路径下）</td><td>按冲突策略处理并计数</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.7 幂等设计</h3>
+  <ul>
+    <li>每次导入生成 <code>import_batch</code> 记录（文件指纹 SHA-256、识别模式、目标库、操作人、计数）。</li>
+    <li>每条用例保存 <code>source_node_id</code> + <code>source_file_hash</code>；同一文件重复导入时按指纹快速判重。</li>
+    <li>导入批次支持<b>整批回滚</b>：删除该批次新建的用例（软删进回收站），已更新用例按版本快照还原。</li>
+    <li>大体量导入拆分为事务小批，任意一批失败不影响已成功批次，报告中可定位到具体批次重试。</li>
+  </ul>
+
+  <h3>3.8 反向导出（可选，建议做）</h3>
+  <p>用例库 → <code>.xmind</code>：按 <code>模块路径 → 用例（标题带 tc-前缀）→ 步骤 → 预期结果</code> 生成 content.json 并打包为 zip。价值在于：<b>XMind 是测试人员最顺手的批量编辑界面</b>——把 XMind 当"编辑器"，本系统当"数据库"，形成"导出改 → 导入回"的闭环。工程量不大（就是 3.4 节的逆过程），建议纳入 M2。</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2><span class="num">4</span>数据模型</h2>
+
+  <figure>
+    <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="数据模型实体关系">
+      <rect x="0" y="0" width="900" height="280" fill="#ffffff"/>
+      <!-- row1 -->
+      <rect x="24" y="24" width="180" height="52" rx="7" fill="#eaf1fd" stroke="#1f5fd6"/>
+      <text x="114" y="46" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#163f8f" text-anchor="middle">product</text>
+      <text x="114" y="64" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">产品 / 项目</text>
+
+      <rect x="248" y="24" width="190" height="52" rx="7" fill="#eaf1fd" stroke="#1f5fd6"/>
+      <text x="343" y="46" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#163f8f" text-anchor="middle">case_library</text>
+      <text x="343" y="64" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">用例库 · 项目库/公共库</text>
+
+      <rect x="482" y="24" width="180" height="52" rx="7" fill="#eaf1fd" stroke="#1f5fd6"/>
+      <text x="572" y="46" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#163f8f" text-anchor="middle">module</text>
+      <text x="572" y="64" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">功能模块树（自引用）</text>
+
+      <rect x="706" y="24" width="170" height="52" rx="7" fill="#fff7e6" stroke="#b45309"/>
+      <text x="791" y="46" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#7a4b0a" text-anchor="middle">test_case</text>
+      <text x="791" y="64" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">测试用例（核心表）</text>
+
+      <path d="M204 50 L248 50" stroke="#1f5fd6" stroke-width="1.6"/>
+      <path d="M248 50 l-8 -4.5 l0 9 z" fill="#1f5fd6"/>
+      <path d="M438 50 L482 50" stroke="#1f5fd6" stroke-width="1.6"/>
+      <path d="M482 50 l-8 -4.5 l0 9 z" fill="#1f5fd6"/>
+      <path d="M662 50 L706 50" stroke="#1f5fd6" stroke-width="1.6"/>
+      <path d="M706 50 l-8 -4.5 l0 9 z" fill="#1f5fd6"/>
+
+      <!-- row2 -->
+      <rect x="24" y="110" width="170" height="52" rx="7" fill="#f7f9fc" stroke="#c3cdd9"/>
+      <text x="109" y="132" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#3a4451" text-anchor="middle">field / field_config</text>
+      <text x="109" y="150" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">字段定义 + 字段配置</text>
+
+      <rect x="248" y="110" width="170" height="52" rx="7" fill="#f7f9fc" stroke="#c3cdd9"/>
+      <text x="333" y="132" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#3a4451" text-anchor="middle">case_step</text>
+      <text x="333" y="150" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">步骤 / 预期结果</text>
+
+      <rect x="472" y="110" width="160" height="52" rx="7" fill="#f7f9fc" stroke="#c3cdd9"/>
+      <text x="552" y="132" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#3a4451" text-anchor="middle">case_version</text>
+      <text x="552" y="150" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">版本快照</text>
+
+      <rect x="686" y="110" width="190" height="52" rx="7" fill="#f7f9fc" stroke="#c3cdd9"/>
+      <text x="781" y="132" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#3a4451" text-anchor="middle">work_item_link</text>
+      <text x="781" y="150" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">关联需求 / 任务 / 缺陷</text>
+
+      <path d="M194 136 L248 136" stroke="#c3cdd9" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <path d="M418 136 L472 136" stroke="#c3cdd9" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <path d="M632 136 L686 136" stroke="#c3cdd9" stroke-width="1.4" stroke-dasharray="4 3"/>
+      <path d="M791 76 L791 110" stroke="#b45309" stroke-width="1.4"/>
+
+      <!-- row3 -->
+      <rect x="24" y="196" width="180" height="56" rx="7" fill="#e8f5ef" stroke="#1a7f5a"/>
+      <text x="114" y="218" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#136048" text-anchor="middle">test_plan</text>
+      <text x="114" y="236" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">待办/进行中/已完成</text>
+
+      <rect x="248" y="196" width="180" height="56" rx="7" fill="#e8f5ef" stroke="#1a7f5a"/>
+      <text x="338" y="218" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#136048" text-anchor="middle">plan_case</text>
+      <text x="338" y="236" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">执行人 / 结果 / 说明 / 附件</text>
+
+      <rect x="472" y="196" width="180" height="56" rx="7" fill="#e8f5ef" stroke="#1a7f5a"/>
+      <text x="562" y="218" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#136048" text-anchor="middle">import_batch</text>
+      <text x="562" y="236" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">导入批次 + 问题节点</text>
+
+      <rect x="686" y="196" width="190" height="56" rx="7" fill="#e8f5ef" stroke="#1a7f5a"/>
+      <text x="781" y="218" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#136048" text-anchor="middle">audit_log</text>
+      <text x="781" y="236" font-family="Segoe UI, Microsoft YaHei" font-size="11" fill="#5b6572" text-anchor="middle">操作审计</text>
+
+      <path d="M204 224 L248 224" stroke="#1a7f5a" stroke-width="1.6"/>
+      <path d="M248 224 l-8 -4.5 l0 9 z" fill="#1a7f5a"/>
+      <path d="M428 224 L472 224" stroke="#c3cdd9" stroke-width="1.4" stroke-dasharray="4 3"/>
+    </svg>
+    <figcaption>图 5 · 实体关系概览（实线为主干，虚线为附属）</figcaption>
+  </figure>
+
+  <h3>4.1 核心表字段清单</h3>
+
+  <h4>test_case（核心）</h4>
+  <table>
+    <thead><tr><th style="width:22%">字段</th><th style="width:16%">类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>BIGINT PK</td><td>内部主键</td></tr>
+      <tr><td><code>display_id</code></td><td>VARCHAR(32) UNIQUE</td><td>对齐 ONES「测试用例 ID」，规则 <code>TC-{库前缀}-{4位序号}</code></td></tr>
+      <tr><td><code>library_id</code> / <code>module_id</code></td><td>FK</td><td>库与模块归属；<code>module_id</code> 可为空（无模块用例）</td></tr>
+      <tr><td><code>title</code></td><td>VARCHAR(500)</td><td>用例名称，必填</td></tr>
+      <tr><td><code>priority</code></td><td>ENUM(P0,P1,P2,P3)</td><td>可选值可配置</td></tr>
+      <tr><td><code>case_type</code></td><td>VARCHAR(64)</td><td>测试用例类型（功能测试/性能测试/…），选项可自定义</td></tr>
+      <tr><td><code>case_shape</code></td><td>ENUM(text, step)</td><td>文本型 / 步骤型 —— 决定详情页渲染方式</td></tr>
+      <tr><td><code>precondition</code></td><td>TEXT</td><td>前置条件</td></tr>
+      <tr><td><code>description</code></td><td>TEXT</td><td>文本型用例的描述</td></tr>
+      <tr><td><code>expected</code></td><td>TEXT</td><td>文本型用例的预期结果</td></tr>
+      <tr><td><code>maintainer_id</code></td><td>FK user</td><td>维护者</td></tr>
+      <tr><td><code>tags</code></td><td>JSON</td><td>标签数组</td></tr>
+      <tr><td><code>version_no</code></td><td>INT</td><td>当前版本号</td></tr>
+      <tr><td><code>source_node_id</code> / <code>source_file_hash</code></td><td>VARCHAR(64)</td><td><b>导入溯源与幂等去重</b></td></tr>
+      <tr><td><code>status</code></td><td>ENUM(active, archived)</td><td>—</td></tr>
+      <tr><td><code>deleted_at</code></td><td>DATETIME</td><td>软删，回收站依据</td></tr>
+      <tr><td><code>created_by/at</code>、<code>updated_by/at</code></td><td>—</td><td>审计</td></tr>
+    </tbody>
+  </table>
+
+  <h4>case_step / plan_case / field 关键字段</h4>
+  <table>
+    <thead><tr><th style="width:20%">表</th><th style="width:26%">关键字段</th><th>要点</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>case_step</code></td>
+        <td><code>case_id, step_no, action, expected, source_node_id</code></td>
+        <td>步骤有序；<code>expected</code> 支持多条预期结果合并后的文本。<b>步骤级结果</b>另存于执行期，不污染用例本体</td>
+      </tr>
+      <tr>
+        <td><code>plan_case</code></td>
+        <td><code>plan_id, case_id, executor_id, result, note, executed_at, case_snapshot_version, step_results(JSON)</code></td>
+        <td>结果枚举（执行情况）：<code>pass=通过 / fail=不通过 / blocked=阻塞 / pending_confirm=待确认</code>，另有系统初始态 <code>not_run=未执行</code>（不可手动选中）；记录快照版本号以隔离用例库后续改动</td>
+      </tr>
+      <tr>
+        <td><code>bug_ref</code></td>
+        <td><code>plan_case_id, step_no(NULL=用例级), bug_work_item_id, action(create|link)</code></td>
+        <td>支持"步骤级 / 用例级"两种粒度提缺陷，对齐 ONES</td>
+      </tr>
+      <tr>
+        <td><code>field</code></td>
+        <td><code>name, type, scope(system|custom), options(JSON), editable</code></td>
+        <td>系统字段 <code>scope=system</code>，仅 <code>priority</code> / <code>case_type</code> 的 options 可改</td>
+      </tr>
+      <tr>
+        <td><code>field_config_item</code></td>
+        <td><code>config_id, field_id, required, default_value, sort_order, visible</code></td>
+        <td>库 ↔ 配置 1:N；配置被库引用时禁止删除（外键约束 + 业务校验双保险）</td>
+      </tr>
+      <tr>
+        <td><code>import_batch</code></td>
+        <td><code>file_name, file_hash, format(json|xml|opml|xlsx), recognize_mode, canvas_index, target_library_id, counts(JSON), status</code></td>
+        <td>整批回滚的依据</td>
+      </tr>
+      <tr>
+        <td><code>import_issue</code></td>
+        <td><code>batch_id, level(V|W), rule_code, node_path, raw_title, payload(JSON), resolution(auto|manual|ignored)</code></td>
+        <td>问题节点可定位、可回溯、可在向导里就地修复</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 三个关键设计决策</h3>
+  <ol>
+    <li><b>统一字段模型而不是给每个字段一列。</b> 自定义字段用宽表会失控；采用 <code>field</code> + <code>case_field_value</code>（EAV）承载自定义字段，系统高频字段（title / priority / module / maintainer）保留为真实列以保证查询性能。这是"性能与灵活性"的折中。</li>
+    <li><b>模块树用物化路径 + 排序号。</b> <code>module.path</code>（如 <code>/12/45/78/</code>）让"查某模块含子模块的全部用例"退化为字符串前缀查询，避免递归 CTE。<code>sort_order</code> 用稀疏步长（1000）支撑拖拽插入时不必全表重排。</li>
+    <li><b>执行结果与用例本体分离。</b> 用例库是"长期资产"，执行结果属于"某一次计划"。两者不同生命周期，混在一张表会导致历史结果被用例修改污染——这也是为什么要有 <code>case_snapshot_version</code>。</li>
+  </ol>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2><span class="num">5</span>技术选型</h2>
+  <div class="grid2">
+    <div class="box">
+      <h4>方案 A · Python 后端 + React 前端 <span class="tag new">推荐</span></h4>
+      <ul>
+        <li>后端：FastAPI + SQLAlchemy 2.0 + Alembic</li>
+        <li>数据库：SQLite（单机）→ PostgreSQL（多人）无缝切换</li>
+        <li>前端：Vite + React + TypeScript + Ant Design</li>
+        <li>XMind/OPML 解析：Python 原生 <code>zipfile</code> + <code>json</code> / <code>lxml</code></li>
+        <li>Excel：<code>openpyxl</code></li>
+      </ul>
+      <p style="margin-bottom:0"><b>优点：</b>XMind 解析生态成熟；可复用你现有 Python 环境；AntD 的 Tree/Table/Drawer 与 ONES 观感高度同构；单机一键启动，后续可平滑上多用户。<br><b>代价：</b>前后端两个进程，部署比单体稍复杂。</p>
+    </div>
+    <div class="box">
+      <h4>方案 B · Next.js 全栈单体</h4>
+      <ul>
+        <li>Next.js + Prisma + SQLite/PostgreSQL</li>
+        <li>解析用 <code>xmind</code> npm 或自研（zip + JSON 解析 Node 也能做）</li>
+        <li>一份代码、一处部署</li>
+      </ul>
+      <p style="margin-bottom:0"><b>优点：</b>工程结构简单，API 与页面同仓同构，类型可端到端共享。<br><b>代价：</b>Node 侧 XMind 解析库在<b>新版 content.json</b> 上的兼容性不如 Python 侧社区实践充分，可能需要自己补坑；且与你现有 Python 技术栈割裂。</p>
+    </div>
+  </div>
+  <div class="callout ok">
+    <b>推荐理由（方案 A）：</b>本项目的技术难点集中在"XMind 跨版本解析 + 结构识别 + 预览纠错"，这部分 Python 侧的社区实践最充分（content.json / content.xml 双通道、marker/notes 提取都有成熟先例）。把风险耗在解析上是划算的，UI 与数据库都属常规工程。
+  </div>
+  <h4>部署形态</h4>
+  <ul>
+    <li><b>单机自用：</b><code>python -m app</code> 起后端 + 静态前端产物，浏览器访问 localhost，数据落 SQLite 文件。可做成 Windows 一键启动脚本。</li>
+    <li><b>团队共用：</b>Docker Compose（后端 + PostgreSQL + Nginx），加登录与库级权限。</li>
+  </ul>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2><span class="num">6</span>里程碑与交付物</h2>
+  <p>按"每个阶段都能独立用起来"切分，而不是按技术层次切分。工作量用相对量级标注（S &lt; M &lt; L），具体排期待技术栈确认后再定。</p>
+  <table>
+    <thead><tr><th style="width:9%">阶段</th><th style="width:24%">主题</th><th style="width:40%">交付物</th><th style="width:11%">量级</th><th>验收标准</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>M0</b></td><td>骨架可用</td>
+        <td>用例库管理 + 模块树（拖拽/计数/删除不删用例）+ 用例 CRUD + 字段定义与字段配置 + 回收站</td>
+        <td>L</td>
+        <td>能手工把 30 条用例按模块树录完并正常检索</td>
+      </tr>
+      <tr>
+        <td><b>M1</b></td><td>XMind 导入<span class="tag p0">核心</span></td>
+        <td>跨版本解析器 + M1/M2/M3 三种识别模式 + 4 步导入向导 + 校验规则 + 幂等与整批回滚 + 导入报告</td>
+        <td>L</td>
+        <td>一份真实 XMind 用例文件导入后，结构、等级、前置条件、步骤/预期 100% 正确；重复导入不产生重复用例</td>
+      </tr>
+      <tr>
+        <td><b>M2</b></td><td>计划与执行</td>
+        <td>测试计划 CRUD + 关联用例 + 执行人分配 + 执行界面（步骤级打勾、结果、备注、附件）+ 批量改结果 + 失败提缺陷 + 用例→XMind 反导出</td>
+        <td>L</td>
+        <td>一条完整回归计划能跑完并产出结果统计</td>
+      </tr>
+      <tr>
+        <td><b>M3</b></td><td>追溯与报告</td>
+        <td>需求追溯矩阵 + 测试报告（进度 / 通过率 / 缺陷分布 / 按模块·执行人）+ xlsx / opml 导入导出</td>
+        <td>M</td>
+        <td>能从需求出发查到用例与最新结果，并导出全字段</td>
+      </tr>
+      <tr>
+        <td><b>M4</b></td><td>协作与对接</td>
+        <td>登录与库级权限、审计日志、REST API、导入规则插件化（新增规则只加实现不动核心）、ONES 迁移脚本</td>
+        <td>M</td>
+        <td>多人可分权使用；可通过 API 与外部系统交互</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <b>建议的推进顺序：</b>M1 优先于 M0 的完整度。先把"导入 30 秒出结果"这条链路打通（哪怕 UI 粗糙），用它把你的真实 XMind 用例库灌进去，再回头按真实数据结构打磨 M0 的字段与交互。理由：本方案最大的未知是"你的 XMind 实际长什么样"，先用真实数据把这个不确定性消掉，后续设计才不会是纸上谈兵。
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <h2><span class="num">7</span>待确认清单</h2>
+  <p>以下问题会实质影响数据模型与工程量，需要在动手写代码前确认。我按影响程度排序：</p>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:32%">问题</th><th>为什么关键 / 影响面</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>1</b></td>
+        <td>能否提供一份<b>真实的 .xmind 用例文件</b>（以及 ONES 导出/模板样例，如果有）？</td>
+        <td><b>最高优先级。</b>它决定识别模式以哪一套为准、层级深度、优先级是用图标还是前缀、前置条件放备注还是 <code>pc:</code> 节点。拿到文件我可以先写一个解析脚本跑一遍，把识别规则调准，再写系统——这一步能省掉大量返工。</td>
+      </tr>
+      <tr>
+        <td><b>2</b></td>
+        <td>使用场景是<b>单机自用</b>还是<b>团队多人</b>？</td>
+        <td>决定是否需要登录、用户体系、库级权限、并发写入处理。单机版可以把 M4 砍掉，工程量显著下降。</td>
+      </tr>
+      <tr>
+        <td><b>3</b></td>
+        <td>与 ONES 的关系：只要<b>结构对齐便于日后迁移</b>，还是要做<b>数据往返</b>（导出 ONES 可直接再导入的格式）？</td>
+        <td>前者只需字段命名与层级对齐；后者需要额外实现 ONES 的导入模板格式，并在 M1 增加"ONEs 兼容导出"。</td>
+      </tr>
+      <tr>
+        <td><b>4</b></td>
+        <td>是否保留<b>禅道标准 10 列 xlsx</b> 的导入导出？</td>
+        <td>你现有工作流是"禅道 10 列 xlsx"。若保留，系统需内置这套映射，等于多一个导入适配器；好处是新工具能立刻接管现有资产，不用从零录。</td>
+      </tr>
+      <tr>
+        <td><b>5</b></td>
+        <td>技术栈确认：<b>Python(FastAPI) + React</b> 是否可接受？</td>
+        <td>决定实现方式与你后续自己维护的难度。</td>
+      </tr>
+      <tr>
+        <td><b>6</b></td>
+        <td>是否需要<b>用例评审流</b>（提交评审 → 通过/驳回 → 状态流转）？</td>
+        <td>MVP 我按"版本历史 + 状态标记"的轻量方案设计。若需要正式评审流程，M0 要加状态机与评审记录表。</td>
+      </tr>
+      <tr>
+        <td><b>7</b></td>
+        <td>需求/缺陷是否需要与外部系统（ONES / 禅道 / Jira）打通？</td>
+        <td>若只做本地轻量引用（维护编号+标题+链接），M3 很轻；若要做 API 双向同步，需单独评估对方开放平台能力。</td>
+      </tr>
+      <tr>
+        <td><b>8</b></td>
+        <td>是否需要 <b>XMind 反向导出</b>（用例库 → .xmind）？</td>
+        <td>工程量不大且实用（把 XMind 当批量编辑器），建议做，但需确认。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <b>本方案中的假设（若与实际不符请指出）：</b>
+    <ol style="margin:6px 0 0">
+      <li>优先级 semantics 采用 P0 冒烟 → P3 低频，与 ONES 文档一致。</li>
+      <li>XMind 优先级图标 <code>priority-1/2/3</code> 分别映射 P0/P1/P2，<code>≥4</code> 映射 P3（与 CODING 约定一致）。</li>
+      <li>"步骤型用例"的每个步骤最多对应一条预期结果；多条预期结果按合并处理（对齐云效的实现）。</li>
+      <li>模块树层级上限取 10 级（ONES 系产品普遍在 8–12 级之间）。</li>
+      <li>用例 ID 形如 <code>TC-0001</code>，按库内自增。</li>
+      <li>执行结果枚举（执行情况，<b>用户已确认</b>）：<b>通过 / 不通过 / 阻塞 / 待确认</b> 四态 + 系统内建的"未执行"初始态。不设"跳过"态——"跳过"的场景由"待确认"覆盖。</li>
+    </ol>
+  </div>
+</section>
+
+<footer class="doc">
+  <hr>
+  <p>设计方案 v0.1 · 2026-09-29 · 调研来源：ONES 官方帮助文档（docs.ones.com）、ONES TestCase 产品页、阿里云云效与 CODING 的思维导图导入规范（作为 XMind 约定的参考实现）、XMind 文件格式的跨版本解析实践。</p>
+</footer>
+
+</div>
+</body>
+</html>
