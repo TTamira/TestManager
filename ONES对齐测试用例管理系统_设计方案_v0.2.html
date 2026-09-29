@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ONES 对齐测试用例管理系统 · 设计方案 v0.1</title>
+<title>ONES 对齐测试用例管理系统 · 设计方案 v0.2</title>
 <style>
   :root{
     --bg:#f6f7f9; --card:#ffffff; --ink:#1f2328; --muted:#5b6572;
@@ -98,13 +98,14 @@
 <div class="wrap">
 
 <header class="doc">
-  <div class="eyebrow">Design Proposal · v0.1</div>
-  <h1>ONES 对齐的测试用例管理系统<br>（网页版 · XMind 导入）</h1>
-  <p class="sub">目标：把「XMind 写用例 → 结构化落库 → 计划执行 → 提缺陷」这条链路做成一套自有网页工具，数据结构与交互对齐 ONES，便于日后迁移或双轨并行。</p>
+  <div class="eyebrow">Design Proposal · v0.2</div>
+  <h1>ONES 对齐的测试用例管理系统<br>（网页版 · XMind 导入 · AI 辅助编写）</h1>
+  <p class="sub">目标：把「XMind / 文本(AI) 写用例 → 结构化落库 → 计划执行 → 提缺陷」这条链路做成一套自有网页工具，数据结构与交互对齐 ONES，便于日后迁移或双轨并行。单机自用，数据库采用 PostgreSQL（可用 pgAdmin4 可视化管理）。</p>
   <div class="meta">
     <span>对齐基线：ONES TestCase</span>
-    <span>输入：.xmind / .opml / .xlsx</span>
-    <span>形态：Web（单机或团队）</span>
+    <span>输入：.xmind / 导入文本(AI或手写的约定格式) / .opml / .xlsx</span>
+    <span>形态：Web（单机自用）</span>
+    <span>数据库：PostgreSQL（pgAdmin4 可视化管理）</span>
     <span>2026-09-29</span>
   </div>
 </header>
@@ -119,7 +120,7 @@
     <a href="#s4">4 · 数据模型</a><br>
     <a href="#s5">5 · 技术选型</a><br>
     <a href="#s6">6 · 里程碑与交付物</a><br>
-    <a href="#s7">7 · 待确认清单</a>
+    <a href="#s7">7 · 确认结论（v0.2 已锁定）</a>
   </div>
 </section>
 
@@ -138,6 +139,10 @@
     <li><b>建议 Python（FastAPI）技术栈。</b> XMind 解析生态在 Python 侧最成熟，且能直接复用你现有的 Python 环境；前端用 React + Ant Design，其 Tree / Table / Drawer 组件与 ONES 的观感几乎同构。</li>
     <li><b>导入能力要做成"插件化规则"。</b> ONES 官方公开文档只明确 .opml / .xlsx，.xmind 与自定义字段映射见其产品更新说明；而云效、CODING 各有自己的一套 XMind 约定（<code>tc:</code> 前缀 vs <code>+</code> 分组 + 优先级图标）。规则可配置，才不会绑死在某一家。</li>
   </ol>
+
+  <div class="callout ok">
+    <b>v0.2 已落地（2026-09-29 用户确认）：</b>基于用户提供的真实样例 <code>法律agent业务工作台.xmind</code> 验证了导入识别规则；确认用例内容可由 AI 代写（默认 DeepSeek，可切 GPT）；测试计划支持用户自建 + 从用例库引用导入 + 多轮并存；用例库/模块树/用例均支持系统内手动增删改；评审流简化为"待修改"标记；执行情况四态 = 通过/不通过/阻塞/待确认 + 系统"未执行"初始态。详见第 7 章确认结论。
+  </div>
 </section>
 
 <!-- ============ 1 ============ -->
@@ -280,7 +285,7 @@
         <li>Wiki 页面关联</li>
         <li>CI/CD 与自动化测试集成</li>
         <li>自定义测试报告模板引擎</li>
-        <li>用例评审流（ONES 有相关能力，MVP 先用"版本历史 + 状态标记"替代）</li>
+        <li>完整 ONES 评审流（提交→通过/驳回状态机）；本系统改用轻量 <code>review_status</code>：待评审 / 已通过 / 待修改（用户可标记"待修改"）</li>
       </ul>
     </div>
   </div>
@@ -346,10 +351,10 @@
     <li><b>交互一致性</b>：点行展开详情抽屉，URL 同步 <code>?case=TC-0012</code>，方便直接分享/收藏某条用例。</li>
   </ul>
 
-  <h3>2.3 测试计划与执行</h3>
-  <p>分三屏：计划列表 → 计划详情（用例 + 执行人 + 结果）→ 执行界面。</p>
+  <h3>2.3 测试计划与执行（计划由用户自建、可多轮并存）</h3>
+  <p>测试不是只有一轮。系统支持<b>用户自建多个测试计划</b>（如"冒烟测试""功能测试""回归测试"），每个计划<b>从用例库"引用导入"用例</b>（按模块、按优先级筛选，例如只导 P0，或导 P0–P3）。导入是<b>引用而非复制</b>：同一用例可进入多个计划，各计划各自记录执行结果、互不影响。分三屏：计划列表 → 计划详情（用例 + 执行人 + 结果）→ 执行界面。</p>
   <ul>
-    <li><b>计划列表</b>：按状态（待办 / 进行中 / 已完成）分组，支持按关联项目、关联迭代分组；每张卡片显示进度条（已执行/总数、通过率）。注："待确认"计入"已执行"但不计入通过/不通过分母，单列统计。</li>
+    <li><b>计划列表</b>：用户可新建/重命名/删除计划；按状态（待办 / 进行中 / 已完成）分组；每张卡片显示进度条（已执行/总数、通过率），并提供"从用例库导入"入口。注："待确认"计入"已执行"但不计入通过/不通过分母，单列统计。</li>
     <li><b>计划详情</b>：用例列表可排序（ID / 名称 / 维护者 / 优先级 / 类型 / 执行人 / 结果）、可复杂筛选、可隐藏子模块用例；支持批量改执行人、批量改结果。</li>
     <li><b>执行界面</b>：逐步骤打勾（步骤级结果），整例给结论：<b>通过 / 不通过 / 阻塞 / 待确认</b>（执行情况字段，四态为用户指定；另有系统内建的"未执行"初始态，不可手动选中）；备注与附件可选必填（跟随计划的字段配置）；失败时按钮：<code>创建缺陷</code> / <code>关联已有缺陷</code>，可选挂在某一步骤或整个用例。"不通过"与"阻塞"均可提缺陷；"待确认"不提缺陷，用于结果存疑（如环境问题、需求未明确的 Demo-only 项）暂缓判定。</li>
     <li><b>键盘流</b>：<code>J/K</code> 切上下条，<code>P/F/B/S</code> 直接标记结果，执行大型回归时效率提升明显。</li>
@@ -358,7 +363,33 @@
     <b>设计决策（增强，非 ONES 行为）：</b>测试计划引用用例时记录<b>用例版本号</b>（快照）。这样用例库后续被修改，不会污染历史执行结果的判定依据。ONES 未明确这一点，我们按更严谨的方式做，并在 UI 上标注"该用例在计划创建后已被修改"。
   </div>
 
-  <h3>2.4 需求追溯矩阵</h3>
+  <h3>2.4 用例内容录入：表单是统一终点（含 AI 辅助编写）</h3>
+  <p>用例内容的生产者可能是你打字，也可能是 AI 产出文本。两者<b>不</b>是两条平行线，而是汇聚到<b>同一个表单</b>：</p>
+  <ul>
+    <li><b>XMind 导入</b>：负责"骨架"（模块/用例名），内容由解析器填入表单。</li>
+    <li><b>导入文本</b>（起步即支持，零对接）：你把 AI（DeepSeek 等）或自己按《内容约定格式》写好的文本粘进系统，系统解析后落入表单。无需任何 API key。</li>
+    <li><b>手动表单</b>：直接在系统表单里逐字段打字（传统录入，连解析都省了）。</li>
+  </ul>
+  <p>无论内容谁生产、什么格式，最后都进同一个表单，由你复核确认后保存。AI 不"填"表单，而是产出结构化文本 → 系统解析 → 文本变成表单里的字段 → 你确认保存。</p>
+
+  <h4>内容约定格式（AI 与人共用，系统只认这一种结构）</h4>
+  <pre><code>模块: 登录功能
+用例: 正确账号密码登录
+优先级: P0
+前置条件: 已注册且未登录
+步骤:
+1. 打开登录页
+   预期: 显示账号、密码输入框及登录按钮
+2. 输入正确的手机号和密码
+   预期: 输入框正常回显
+3. 点击登录
+最终预期: 跳转首页，右上角显示用户昵称</code></pre>
+  <p>该格式与 XMind 笔记的三段式（前置条件 / 用例步骤 / 预期结果）完全一致，故<b>XMind 笔记解析与文本导入共用同一解析器</b>。其中每步骤可带"预期"（内联预期，可选），用例级"最终预期"为可选的整体核对点——覆盖"大部分情况最后一步才有预期、有时中间步骤也要写预期"的真实写法。</p>
+
+  <h4>AI 客户端（预留，非现在接入）</h4>
+  <p>DeepSeek 与 OpenAI(GPT) 均提供 OpenAI 兼容的 <code>chat/completions</code> API。系统预留一个可切换的 provider-agnostic 客户端（改 <code>base_url</code> / <code>api_key</code> / <code>model</code> 三值即可切换），默认指向 <b>DeepSeek</b>，后续可切 <b>GPT</b>。系统内的"AI 帮我写"按钮（直接调 API）列为<b>后期增强</b>，起步阶段用"导入文本"兜底，届时接入需单独审批。</p>
+
+  <h3>2.5 需求追溯矩阵</h3>
   <p>行 = 需求（从本地轻量「工作项」表读取，字段：编号 / 标题 / 类型 / 状态），列分组 = 用例 / 最新结果 / 关联缺陷。单元格点击直接跳到用例详情。该页面回答两个问题：<b>哪些需求一条用例都没有</b>、<b>哪些需求只有浅层成功路径用例</b>。</p>
 </section>
 
@@ -437,8 +468,27 @@
     </tbody>
   </table>
 
+  <h4>3.2.1 基于真实样例的默认识别规则（2026-09-29 用 <code>法律agent业务工作台.xmind</code> 验证）</h4>
+  <p>用户实际使用方式极其简洁，且恰好与上面的"层级推导"一致，故将其定为<b>默认识别模式</b>：</p>
+  <table>
+    <thead><tr><th style="width:24%">XMind 元素</th><th>映射为</th></tr></thead>
+    <tbody>
+      <tr><td>中心主题（d0）</td><td>用例库名（如 <code>业务工作台</code>）</td></tr>
+      <tr><td>所有非叶子节点</td><td>功能模块树（功能地图）；至多 4 级（一级模块 → 子模块 → …）</td></tr>
+      <tr><td>叶子节点（无子节点）</td><td>测试用例，<b>标题 = 用例名</b></td></tr>
+      <tr><td>叶子节点的<b>笔记</b></td><td>用例内容，按三段式「前置条件 / 用例步骤 / 预期结果」解析</td></tr>
+    </tbody>
+  </table>
   <div class="callout key">
-    <b>为什么必须做成可切换：</b>ONES 官方公开文档明确的用例库导入只有 <code>.xlsx</code> / <code>.opml</code>，<code>.xmind</code> 与"自定义导入字段"出现在其产品更新说明里，但公开文档未给出完整的节点约定规范。与其赌一套，不如做成规则可插拔——后续拿到真实 ONES 模板样例，只需新增一个规则实现，不动核心链路。
+    <b>两个实测缺口（已在规则中处理）：</b>
+    <ul style="margin:6px 0 0">
+      <li><b>优先级未编码</b>：真实文件全文件 0 markers / 0 labels。规则支持在笔记里加可选行 <code>优先级: P0</code>；缺省则导入为"未设"，在表单补。</li>
+      <li><b>半成品</b>：34 个末端仅 11 个有笔记。空笔记的末端也作为"用例但内容待补"导入进库，供用户在系统内后续补全，而不是跳过。</li>
+    </ul>
+  </div>
+
+  <div class="callout key">
+    <b>为什么做成可切换：</b>ONES 官方公开文档明确的用例库导入只有 <code>.xlsx</code> / <code>.opml</code>，<code>.xmind</code> 与"自定义导入字段"出现在其产品更新说明里，但公开文档未给出完整的节点约定规范。与之并列的 M1/M2 模式（云效 / CODING 约定）保留为可插拔选项，后续拿到真实 ONES 模板样例，只需新增一个规则实现，不动核心链路。
   </div>
 
   <h3>3.3 映射示意</h3>
@@ -601,6 +651,14 @@ def notes_plain(topic: dict) -&gt; str:
     return re.sub(r"&lt;[^&gt;]+&gt;", "", html).strip()
 </code></pre>
 
+  <h4>3.4.1 步骤与预期配对规则（逐条内联预期 + 最终预期）</h4>
+  <p>用户真实写法：大部分情况只有最后一步才有预期（整体预期），但有时中间某一步也要单独写预期。为此数据模型支持<b>两者并存</b>：每个步骤可带<b>内联预期</b>（可选），用例级另有一个<b>最终预期</b>（可选的整体核对点）。解析启发式（针对 XMind 的"步骤列表 + 预期列表"两段式）：</p>
+  <ul>
+    <li>预期仅 1 条且步骤 &gt; 1 条 → 该预期为<b>最终预期</b>（最常见情形）；</li>
+    <li>预期条数 == 步骤条数 → 逐条 <b>1:1 内联配对</b>；</li>
+    <li>其余情形（1 &lt; 预期数 &lt; 步骤数，或预期数 &gt; 步骤数）→ 前若干步骤内联配对，余下与整体预期交由<b>导入向导第②步"结构预览纠错"闸门</b>人工确认，绝不静默乱序落库。</li>
+  </ul>
+
   <div class="callout warn">
     <b>工程注意（踩坑清单）：</b>
     <ol style="margin:6px 0 0">
@@ -691,8 +749,8 @@ def notes_plain(topic: dict) -&gt; str:
     <li>大体量导入拆分为事务小批，任意一批失败不影响已成功批次，报告中可定位到具体批次重试。</li>
   </ul>
 
-  <h3>3.8 反向导出（可选，建议做）</h3>
-  <p>用例库 → <code>.xmind</code>：按 <code>模块路径 → 用例（标题带 tc-前缀）→ 步骤 → 预期结果</code> 生成 content.json 并打包为 zip。价值在于：<b>XMind 是测试人员最顺手的批量编辑界面</b>——把 XMind 当"编辑器"，本系统当"数据库"，形成"导出改 → 导入回"的闭环。工程量不大（就是 3.4 节的逆过程），建议纳入 M2。</p>
+  <h3>3.8 反向导出（保留项，本期不做）</h3>
+  <p>用例库 → <code>.xmind</code>：按 <code>模块路径 → 用例（标题带 tc-前缀）→ 步骤 → 预期结果</code> 生成 content.json 并打包为 zip。价值在于：<b>XMind 是测试人员最顺手的批量编辑界面</b>——把 XMind 当"编辑器"，本系统当"数据库"，形成"导出改 → 导入回"的闭环。工程量不大（就是 3.4 节的逆过程）。<b>用户已确认本期不做，列为保留项</b>，待实际使用后再评估是否启用。</p>
 </section>
 
 <!-- ============ 4 ============ -->
@@ -788,6 +846,8 @@ def notes_plain(topic: dict) -&gt; str:
       <tr><td><code>precondition</code></td><td>TEXT</td><td>前置条件</td></tr>
       <tr><td><code>description</code></td><td>TEXT</td><td>文本型用例的描述</td></tr>
       <tr><td><code>expected</code></td><td>TEXT</td><td>文本型用例的预期结果</td></tr>
+      <tr><td><code>final_expected</code></td><td>TEXT</td><td>用例级"最终预期"（可选的整体核对点，覆盖"仅最后一步有预期"的情形）</td></tr>
+      <tr><td><code>review_status</code></td><td>ENUM(review_pending, review_passed, review_modify)</td><td>评审状态：待评审 / 已通过 / 待修改（轻量评审流，替代完整 ONES 评审状态机）</td></tr>
       <tr><td><code>maintainer_id</code></td><td>FK user</td><td>维护者</td></tr>
       <tr><td><code>tags</code></td><td>JSON</td><td>标签数组</td></tr>
       <tr><td><code>version_no</code></td><td>INT</td><td>当前版本号</td></tr>
@@ -805,7 +865,7 @@ def notes_plain(topic: dict) -&gt; str:
       <tr>
         <td><code>case_step</code></td>
         <td><code>case_id, step_no, action, expected, source_node_id</code></td>
-        <td>步骤有序；<code>expected</code> 支持多条预期结果合并后的文本。<b>步骤级结果</b>另存于执行期，不污染用例本体</td>
+        <td>步骤有序；<code>expected</code> 为该步骤的<b>内联预期</b>（可选，允许为空）。用例级整体预期存于 <code>test_case.final_expected</code>。<b>步骤级结果</b>另存于执行期，不污染用例本体</td>
       </tr>
       <tr>
         <td><code>plan_case</code></td>
@@ -856,7 +916,7 @@ def notes_plain(topic: dict) -&gt; str:
       <h4>方案 A · Python 后端 + React 前端 <span class="tag new">推荐</span></h4>
       <ul>
         <li>后端：FastAPI + SQLAlchemy 2.0 + Alembic</li>
-        <li>数据库：SQLite（单机）→ PostgreSQL（多人）无缝切换</li>
+        <li>数据库：<b>PostgreSQL</b>（用户已持有 pgAdmin4 作可视化管理，单机亦可运行 PG 服务）；不采用 SQLite，统一以 PG 为唯一存储</li>
         <li>前端：Vite + React + TypeScript + Ant Design</li>
         <li>XMind/OPML 解析：Python 原生 <code>zipfile</code> + <code>json</code> / <code>lxml</code></li>
         <li>Excel：<code>openpyxl</code></li>
@@ -878,7 +938,7 @@ def notes_plain(topic: dict) -&gt; str:
   </div>
   <h4>部署形态</h4>
   <ul>
-    <li><b>单机自用：</b><code>python -m app</code> 起后端 + 静态前端产物，浏览器访问 localhost，数据落 SQLite 文件。可做成 Windows 一键启动脚本。</li>
+    <li><b>单机自用：</b><code>python -m app</code> 起后端 + 静态前端产物，浏览器访问 localhost，数据落本地 PostgreSQL 实例（可做成 Windows 一键启动脚本，自动拉起 PG 服务）。pgAdmin4 用于可视化查看与管理数据。</li>
     <li><b>团队共用：</b>Docker Compose（后端 + PostgreSQL + Nginx），加登录与库级权限。</li>
   </ul>
 </section>
@@ -892,9 +952,9 @@ def notes_plain(topic: dict) -&gt; str:
     <tbody>
       <tr>
         <td><b>M0</b></td><td>骨架可用</td>
-        <td>用例库管理 + 模块树（拖拽/计数/删除不删用例）+ 用例 CRUD + 字段定义与字段配置 + 回收站</td>
+        <td>用例库管理（可建多库/改名/删除）+ 模块树（新建/重命名/拖拽排序/删除不删用例/计数）+ 用例 CRUD（手动增删改）+ 字段定义与字段配置 + 轻量评审状态(待评审/已通过/待修改) + 回收站 + "导入文本"入口</td>
         <td>L</td>
-        <td>能手工把 30 条用例按模块树录完并正常检索</td>
+        <td>能手工把 30 条用例按模块树录完并正常检索；能用手动表单与"导入文本"两种方式录入</td>
       </tr>
       <tr>
         <td><b>M1</b></td><td>XMind 导入<span class="tag p0">核心</span></td>
@@ -904,9 +964,9 @@ def notes_plain(topic: dict) -&gt; str:
       </tr>
       <tr>
         <td><b>M2</b></td><td>计划与执行</td>
-        <td>测试计划 CRUD + 关联用例 + 执行人分配 + 执行界面（步骤级打勾、结果、备注、附件）+ 批量改结果 + 失败提缺陷 + 用例→XMind 反导出</td>
+        <td>测试计划自建 + 从用例库引用导入用例（按模块/优先级筛选）+ 执行人分配 + 执行界面（步骤级打勾、结果、备注、附件）+ 批量改结果 + 失败提缺陷（步骤级/用例级）</td>
         <td>L</td>
-        <td>一条完整回归计划能跑完并产出结果统计</td>
+        <td>一条完整回归计划（如"冒烟测试"导 P0）能跑完并产出结果统计；同用例可进多计划且结果互不干扰</td>
       </tr>
       <tr>
         <td><b>M3</b></td><td>追溯与报告</td>
@@ -929,70 +989,50 @@ def notes_plain(topic: dict) -&gt; str:
 
 <!-- ============ 7 ============ -->
 <section id="s7">
-  <h2><span class="num">7</span>待确认清单</h2>
-  <p>以下问题会实质影响数据模型与工程量，需要在动手写代码前确认。我按影响程度排序：</p>
+  <h2><span class="num">7</span>确认结论（v0.2 已锁定）</h2>
+  <p>以下决策已由用户在 2026-09-29 确认，作为 v0.2 设计基线，不再动摇：</p>
   <table>
-    <thead><tr><th style="width:6%">#</th><th style="width:32%">问题</th><th>为什么关键 / 影响面</th></tr></thead>
+    <thead><tr><th style="width:6%">#</th><th style="width:30%">决策项</th><th>结论</th></tr></thead>
     <tbody>
-      <tr>
-        <td><b>1</b></td>
-        <td>能否提供一份<b>真实的 .xmind 用例文件</b>（以及 ONES 导出/模板样例，如果有）？</td>
-        <td><b>最高优先级。</b>它决定识别模式以哪一套为准、层级深度、优先级是用图标还是前缀、前置条件放备注还是 <code>pc:</code> 节点。拿到文件我可以先写一个解析脚本跑一遍，把识别规则调准，再写系统——这一步能省掉大量返工。</td>
-      </tr>
-      <tr>
-        <td><b>2</b></td>
-        <td>使用场景是<b>单机自用</b>还是<b>团队多人</b>？</td>
-        <td>决定是否需要登录、用户体系、库级权限、并发写入处理。单机版可以把 M4 砍掉，工程量显著下降。</td>
-      </tr>
-      <tr>
-        <td><b>3</b></td>
-        <td>与 ONES 的关系：只要<b>结构对齐便于日后迁移</b>，还是要做<b>数据往返</b>（导出 ONES 可直接再导入的格式）？</td>
-        <td>前者只需字段命名与层级对齐；后者需要额外实现 ONES 的导入模板格式，并在 M1 增加"ONEs 兼容导出"。</td>
-      </tr>
-      <tr>
-        <td><b>4</b></td>
-        <td>是否保留<b>禅道标准 10 列 xlsx</b> 的导入导出？</td>
-        <td>你现有工作流是"禅道 10 列 xlsx"。若保留，系统需内置这套映射，等于多一个导入适配器；好处是新工具能立刻接管现有资产，不用从零录。</td>
-      </tr>
-      <tr>
-        <td><b>5</b></td>
-        <td>技术栈确认：<b>Python(FastAPI) + React</b> 是否可接受？</td>
-        <td>决定实现方式与你后续自己维护的难度。</td>
-      </tr>
-      <tr>
-        <td><b>6</b></td>
-        <td>是否需要<b>用例评审流</b>（提交评审 → 通过/驳回 → 状态流转）？</td>
-        <td>MVP 我按"版本历史 + 状态标记"的轻量方案设计。若需要正式评审流程，M0 要加状态机与评审记录表。</td>
-      </tr>
-      <tr>
-        <td><b>7</b></td>
-        <td>需求/缺陷是否需要与外部系统（ONES / 禅道 / Jira）打通？</td>
-        <td>若只做本地轻量引用（维护编号+标题+链接），M3 很轻；若要做 API 双向同步，需单独评估对方开放平台能力。</td>
-      </tr>
-      <tr>
-        <td><b>8</b></td>
-        <td>是否需要 <b>XMind 反向导出</b>（用例库 → .xmind）？</td>
-        <td>工程量不大且实用（把 XMind 当批量编辑器），建议做，但需确认。</td>
-      </tr>
+      <tr><td><b>1</b></td><td>真实 .xmind 样例</td><td>已提供 <code>法律agent业务工作台.xmind</code>，并据此验证默认识别规则（中心主题=库名 / 非叶子=模块 / 叶子=用例 / 叶子笔记=三段式）。</td></tr>
+      <tr><td><b>2</b></td><td>使用场景</td><td>单机自用，无登录 / 权限 / 并发需求。</td></tr>
+      <tr><td><b>3</b></td><td>与 ONES 关系</td><td>仅结构对齐，不做数据往返（ONES 兼容导出列为保留项）。</td></tr>
+      <tr><td><b>4</b></td><td>禅道 10 列 xlsx</td><td>不保留，不做禅道导入导出。</td></tr>
+      <tr><td><b>5</b></td><td>技术栈</td><td>FastAPI + SQLAlchemy(PostgreSQL) + React/TS + Ant Design + Vite。</td></tr>
+      <tr><td><b>6</b></td><td>用例评审流</td><td>简化为轻量评审状态：待评审 / 已通过 / 待修改（用例可标记"待修改"）。</td></tr>
+      <tr><td><b>7</b></td><td>外部系统打通</td><td>不与 ONES / 禅道 / Jira 打通。</td></tr>
+      <tr><td><b>8</b></td><td>XMind 反向导出</td><td>本期不做，列为保留项。</td></tr>
+      <tr><td><b>9</b></td><td>执行情况字段</td><td>四态：通过 / 不通过 / 阻塞 / 待确认 + 系统"未执行"初始态；不设"跳过"；"待确认"单列统计。</td></tr>
+      <tr><td><b>10</b></td><td>用例内容录入</td><td>表单为统一终点；三路来源（XMind 导入 / 导入文本(AI或手写) / 手动表单）汇入；新增"导入文本"入口与《内容约定格式》；AI 默认 DeepSeek、可切 GPT，系统内"AI 帮我写"按钮列为后期增强。</td></tr>
+      <tr><td><b>11</b></td><td>测试计划</td><td>用户自建多个计划 + 从用例库引用导入用例（按模块/优先级筛选）+ 多轮并存；导入=引用非复制。</td></tr>
+      <tr><td><b>12</b></td><td>系统内手动编辑</td><td>用例库 / 模块树 / 用例均支持手动增删改（新建 / 重命名 / 拖拽排序 / 删除），XMind 导入只是灌入初始结构的手段之一。</td></tr>
+      <tr><td><b>13</b></td><td>步骤 / 预期配对</td><td>每步骤可带内联预期（可选）+ 用例级最终预期（可选）；启发式 + 导入预览纠错闸门兜底。</td></tr>
     </tbody>
   </table>
 
   <div class="callout warn">
-    <b>本方案中的假设（若与实际不符请指出）：</b>
+    <b>残留假设（基于 ONES 文档与行业惯例，若与实际不符请指出）：</b>
     <ol style="margin:6px 0 0">
-      <li>优先级 semantics 采用 P0 冒烟 → P3 低频，与 ONES 文档一致。</li>
-      <li>XMind 优先级图标 <code>priority-1/2/3</code> 分别映射 P0/P1/P2，<code>≥4</code> 映射 P3（与 CODING 约定一致）。</li>
-      <li>"步骤型用例"的每个步骤最多对应一条预期结果；多条预期结果按合并处理（对齐云效的实现）。</li>
+      <li>优先级语义采用 P0 冒烟 → P3 低频，与 ONES 文档一致。</li>
+      <li>XMind 优先级图标 <code>priority-1/2/3</code> 分别映射 P0/P1/P2，<code>≥4</code> 映射 P3（与 CODING 约定一致）；笔记可选行 <code>优先级: P0</code> 为补充编码方式。</li>
       <li>模块树层级上限取 10 级（ONES 系产品普遍在 8–12 级之间）。</li>
       <li>用例 ID 形如 <code>TC-0001</code>，按库内自增。</li>
-      <li>执行结果枚举（执行情况，<b>用户已确认</b>）：<b>通过 / 不通过 / 阻塞 / 待确认</b> 四态 + 系统内建的"未执行"初始态。不设"跳过"态——"跳过"的场景由"待确认"覆盖。</li>
     </ol>
+  </div>
+
+  <div class="callout key">
+    <b>仍待工程期确认的事项（不影响设计基线）：</b>
+    <ul style="margin:6px 0 0">
+      <li>PostgreSQL 服务由用户自备，或经审批后由我协助搭建本地 PG。</li>
+      <li>具体里程碑排期与 M0 范围细化，待技术栈落地后定。</li>
+      <li>"系统内 AI 帮我写"按钮的接入（需用户 API key，单独审批）。</li>
+    </ul>
   </div>
 </section>
 
 <footer class="doc">
   <hr>
-  <p>设计方案 v0.1 · 2026-09-29 · 调研来源：ONES 官方帮助文档（docs.ones.com）、ONES TestCase 产品页、阿里云云效与 CODING 的思维导图导入规范（作为 XMind 约定的参考实现）、XMind 文件格式的跨版本解析实践。</p>
+  <p>设计方案 v0.2 · 2026-09-29 · 调研来源：ONES 官方帮助文档（docs.ones.com）、ONES TestCase 产品页、阿里云云效与 CODING 的思维导图导入规范（作为 XMind 约定的参考实现）、XMind 文件格式的跨版本解析实践、用户真实样例 <code>法律agent业务工作台.xmind</code> 的结构验证。</p>
 </footer>
 
 </div>
